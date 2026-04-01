@@ -76,7 +76,7 @@ const VideoList = ({ refreshKey }) => {
                 <video
                   controls
                   className="w-full h-48 object-cover"
-                  src={`http://localhost:5000/api/videos/stream/${filename}?token=${localStorage.getItem("token")}`}
+                src={`https://video-streaming-processor.onrender.com/api/videos/stream/${filename}?token=${localStorage.getItem("token")}`}
                 />
               ) : (
                 <div className="h-48 flex items-center justify-center flex-col">

@@ -1,14 +1,14 @@
 import { useState } from "react";
 import API from "../api";
+import socket from "../socket";   // 👈 IMPORT SOCKET HERE
 
 export default function Login({ onLogin }) {
-  const [email, setEmail]  = useState("");
-  const [error, setError] =    useState("");
-  const [ loading, setLoading] = useState(false);
+  const [email, setEmail] = useState("");
+  const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
 
-  const handleLogin =   async () => {
-    if (!email.trim())  
-      {
+  const handleLogin = async () => {
+    if (!email.trim()) {
       setError("Email required");
       return;
     }
@@ -19,10 +19,15 @@ export default function Login({ onLogin }) {
 
       const res = await API.post("/api/auth/login", { email });
 
-      localStorage.setItem ("token", res.data.token);
-      localStorage.setItem ("user", JSON.stringify(res.data.user));
+      // Save token
+      localStorage.setItem("token", res.data.token);
+      localStorage.setItem("user", JSON.stringify(res.data.user));
 
-      onLogin && onLogin();
+      // ⭐ IMPORTANT: Connect socket with auth
+      socket.auth = { token: res.data.token };
+      socket.connect();
+
+      if (onLogin) onLogin();
     } catch (err) {
       setError("Login failed");
     } finally {
@@ -33,12 +38,10 @@ export default function Login({ onLogin }) {
   return (
     <div className="flex justify-center items-center min-h-screen bg-gray-50">
       <div className="bg-white p-6 rounded-xl shadow w-80 space-y-4">
-        <h2 className="text-lg font-semibold text-center">
-          Login</h2>
+        <h2 className="text-lg font-semibold text-center">Login</h2>
 
         {error && (
-          <p className="text-red-500 text-sm text-center">
-            {error}</p>
+          <p className="text-red-500 text-sm text-center">{error}</p>
         )}
 
         <input
