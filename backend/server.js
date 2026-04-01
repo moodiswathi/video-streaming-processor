@@ -1,4 +1,5 @@
 const express = require("express");
+import cors from "cors";
 const cors = require("cors");
 const dotenv = require("dotenv");
  const path = require("path");
@@ -17,11 +18,13 @@ connectDB();
 const app = express();
 
 
-app.use(
-  cors({
-    origin: "*", 
-  })
-);
+app.use(cors({
+  origin: [
+    "http://localhost:5173",
+    "https://video-processing-app.netlify.app"
+  ],
+  credentials: true
+}));
 app.use(express.json());
 
 // ===== ROUTES =====
