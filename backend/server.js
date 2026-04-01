@@ -1,8 +1,7 @@
 const express = require("express");
-import cors from "cors";
 const cors = require("cors");
 const dotenv = require("dotenv");
- const path = require("path");
+const path = require("path");
 
 const http = require("http");
 const { Server } = require("socket.io");
@@ -17,39 +16,45 @@ connectDB();
 
 const app = express();
 
+// ------------------ CORS ------------------
+app.use(
+  cors({
+    origin: [
+      "http://localhost:5173",
+      "https://video-processing-app.netlify.app",
+      "https://video-streaming-processor.onrender.com",
+    ],
+    credentials: true,
+  })
+);
 
-app.use(cors({
-  origin: [
-    "http://localhost:5173",
-    "https://video-processing-app.netlify.app"
-  ],
-  credentials: true
-}));
 app.use(express.json());
 
-// ===== ROUTES =====
+// ------------------ ROUTES ------------------
 app.use("/api/auth", authRoutes);
 app.use("/api/videos", videoRoutes);
-
 
 app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 
 const server = http.createServer(app);
 
-
+// ------------------ SOCKET.IO ------------------
 const io = new Server(server, {
   cors: {
-    origin: "*", 
+    origin: [
+      "http://localhost:5173",
+      "https://video-processing-app.netlify.app",
+      "https://video-streaming-processor.onrender.com",
+    ],
+    methods: ["GET", "POST"],
+    credentials: true,
   },
 });
 
-//  SOCKET AUTH
 io.use((socket, next) => {
   const token = socket.handshake.auth.token;
 
-  if (!token) {
-    return next(new Error("Unauthorized"));
-  }
+  if (!token) return next(new Error("Unauthorized"));
 
   try {
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
@@ -60,11 +65,8 @@ io.use((socket, next) => {
   }
 });
 
-//  SOCKET CONNECTION
 io.on("connection", (socket) => {
   console.log("User connected:", socket.user.id);
-
-  // 🔥 IMPORTANT: join user-specific room
   socket.join(socket.user.id);
 
   socket.on("disconnect", () => {
@@ -72,23 +74,20 @@ io.on("connection", (socket) => {
   });
 });
 
-
 app.set("io", io);
-
 
 app.get("/", (req, res) => {
   res.send("Server is running...");
 });
 
-// =
+// GLOBAL ERROR HANDLER
 app.use((err, req, res, next) => {
   console.error("GLOBAL ERROR:", err.message);
   res.status(500).json({ message: err.message || "Server error" });
 });
 
-// ===== START SERVER =====
 const PORT = process.env.PORT || 5000;
 
-server.listen(PORT, () => {
-  console.log(`Server running on port ${PORT}`);
-});
+server.listen(PORT, () =>
+  console.log(`Server running on port ${PORT}`)
+);
